@@ -21,10 +21,10 @@ Tomcat 11 + WAR en la raiz
 Aiven for MySQL 8 (TLS)
 ```
 
-La API queda en:
+La instancia desplegada de este proyecto está en:
 
 ```text
-https://<servicio>.onrender.com/api/glucosa/...
+https://gluco-api-ismael.onrender.com/api/glucosa/...
 ```
 
 ## 1. Crear la base de datos en Aiven
