@@ -90,7 +90,16 @@ public class RestGlucosa {
             return Response.serverError()
                     .entity(gson.toJson(Map.of(
                             "error", "No se pudo obtener la lista de usuarios",
-                            "detalle", String.valueOf(e))))
+                            "detalle", String.valueOf(e),
+                            "causa", String.valueOf(e.getCause()),
+                            "host", String.valueOf(System.getenv("DB_HOST")),
+                            "puerto", String.valueOf(System.getenv("DB_PORT")),
+                            "base", String.valueOf(System.getenv("DB_NAME")),
+                            "usuario", String.valueOf(System.getenv("DB_USER")),
+                            "ssl", String.valueOf(System.getenv("DB_SSL_MODE")),
+                            "passwordConfigurado", String.valueOf(
+                                    System.getenv("DB_PASSWORD") != null
+                                    && !System.getenv("DB_PASSWORD").isBlank()))))
                     .build();
         }
     }
