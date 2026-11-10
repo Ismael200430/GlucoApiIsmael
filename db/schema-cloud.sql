@@ -1,4 +1,4 @@
--- Esquema para MySQL 8 / MySQL-compatible (Filess.io, TiDB Cloud Starter).
+-- Esquema para MySQL 8 / MySQL-compatible (Aiven for MySQL, TiDB Cloud Starter).
 -- Ejecutar sobre la base de datos ya creada, por ejemplo gluco_api.
 -- No se crea FOREIGN KEY para mantener compatibilidad con TiDB.
 -- La API valida que el usuario exista antes de insertar una medida.

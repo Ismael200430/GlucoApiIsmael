@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: healthblood-api
+    name: gluco-api-ismael
     runtime: docker
     plan: free
     region: oregon

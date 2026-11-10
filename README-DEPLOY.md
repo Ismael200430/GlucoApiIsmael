@@ -4,7 +4,7 @@ Esta guía deja la API pública en Render usando:
 
 - **Render Web Service Free** con Docker.
 - **Tomcat 11 + JDK 21**.
-- **Filess.io MySQL 8** gratuito como base de datos.
+- **Aiven for MySQL 8** con el plan de prueba y créditos gratuitos.
 - **CORS abierto** para que un frontend web pueda consumir la API.
 
 ## Arquitectura
@@ -18,7 +18,7 @@ Tomcat 11 + WAR en la raiz
    |
    | TLS por Internet
    v
-Filess.io MySQL 8
+Aiven for MySQL 8 (TLS)
 ```
 
 La API queda en:
@@ -27,29 +27,34 @@ La API queda en:
 https://<servicio>.onrender.com/api/glucosa/...
 ```
 
-## 1. Crear la base de datos en Filess.io
+## 1. Crear la base de datos en Aiven
 
-1. Entra a <https://panel.filess.io/register> y crea una cuenta.
-2. Crea una base **MySQL 8** en el plan **Free**.
-   - El plan Free incluye 2 bases y 10 MB por base.
-   - No requiere tarjeta.
-3. Copia los datos de conexión:
+1. Entra a <https://console.aiven.io> y abre el servicio **MySQL**.
+2. En **Overview > Connection information** copia:
    - Host
    - Puerto
-   - Nombre de la base
-   - Usuario
+   - Usuario (`avnadmin`)
    - Contraseña
-4. Ejecuta el esquema `db/schema-cloud.sql` sobre esa base.
+   - Base de datos inicial (`defaultdb`)
+3. Crea una base dedicada llamada `gluco_api` y ejecuta el esquema.
 
-Puedes usar el editor SQL del panel de Filess.io o un cliente MySQL como DBeaver o MySQL Workbench.
+Con un cliente MySQL (o el editor SQL de Aiven):
 
-Con el cliente `mysql`:
+```sql
+CREATE DATABASE IF NOT EXISTS gluco_api
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+```
+
+Luego aplica el esquema sobre `gluco_api`:
 
 ```bash
-mysql -h <host> -P <puerto> -u <usuario> -p --ssl-mode=REQUIRED <base_de_datos> < db/schema-cloud.sql
+mysql -h <host> -P <puerto> -u <usuario> -p --ssl-mode=REQUIRED gluco_api < db/schema-cloud.sql
 ```
 
 El esquema crea las tablas `usuario` y `medida`. No crea `FOREIGN KEY` para mantener compatibilidad con TiDB; la API valida el usuario antes de guardar una medida.
+
+> Aiven exige TLS. La aplicación usa `DB_SSL_MODE=REQUIRED`.
+> Si el servicio tiene una lista de IP permitidas, agrégale `0.0.0.0/0` para que Render pueda conectarse, porque Render usa IPs de salida dinámicas.
 
 ## 2. Probar la imagen Docker localmente
 
@@ -89,18 +94,20 @@ Respuesta esperada:
 
 ## 3. Subir el proyecto a GitHub
 
-Crea un repositorio vacío en GitHub llamado `API_HealthBlood_512` y ejecuta:
+El repositorio de este proyecto es:
+
+```text
+https://github.com/Ismael200430/GlucoApiIsmael
+```
+
+Desde la carpeta del proyecto:
 
 ```powershell
-git init
-git add .
-git commit -m "Preparar despliegue en Render"
-git branch -M main
-git remote add origin https://github.com/<tu-usuario>/API_HealthBlood_512.git
+git remote add origin https://github.com/Ismael200430/GlucoApiIsmael.git
 git push -u origin main
 ```
 
-Antes de hacer `git add`, verifica que `.env` no aparezca en `git status`. El archivo `.gitignore` ya excluye `build/`, `dist/` y los archivos `.env`.
+Verifica que `.env` no aparezca en `git status`. El archivo `.gitignore` ya excluye `build/`, `dist/` y los archivos `.env`; las credenciales solo se configuran en Render.
 
 ## 4. Crear el servicio en Render
 
@@ -117,7 +124,7 @@ Antes de hacer `git add`, verifica que `.env` no aparezca en `git status`. El ar
    - `DB_PASSWORD`
 5. Aplica el Blueprint.
 
-`DB_SSL_MODE` ya viene configurado como `REQUIRED`.
+El servicio se llamará `gluco-api-ismael`. `DB_SSL_MODE` ya viene configurado como `REQUIRED`.
 
 ### Opción B: Web Service manual
 
@@ -133,11 +140,11 @@ Antes de hacer `git add`, verifica que `.env` no aparezca en `git status`. El ar
 
 | Variable | Valor |
 |---|---|
-| `DB_HOST` | Host de Filess.io |
-| `DB_PORT` | Puerto de Filess.io |
-| `DB_NAME` | Nombre de la base |
-| `DB_USER` | Usuario de Filess.io |
-| `DB_PASSWORD` | Contraseña de Filess.io |
+| `DB_HOST` | Host de Aiven |
+| `DB_PORT` | Puerto de Aiven |
+| `DB_NAME` | `gluco_api` |
+| `DB_USER` | `avnadmin` |
+| `DB_PASSWORD` | Contraseña de Aiven |
 | `DB_SSL_MODE` | `REQUIRED` |
 
 5. Haz clic en **Deploy**.
@@ -232,7 +239,7 @@ La conexión conserva los valores locales por defecto:
 
 Por eso el proyecto sigue funcionando desde NetBeans/Tomcat sin definir variables de entorno.
 
-Si quieres probar Tomcat local contra Filess.io, define las variables antes de iniciar el servidor:
+Si quieres probar Tomcat local contra Aiven, define las variables antes de iniciar el servidor:
 
 ```powershell
 $env:DB_HOST = "..."
@@ -246,8 +253,9 @@ $env:DB_SSL_MODE = "REQUIRED"
 ## Limitaciones y notas
 
 - El Web Service Free de Render se duerme después de 15 minutos sin tráfico. La primera petición puede tardar alrededor de 1 minuto.
-- Filess.io Free ofrece 10 MB por base. Es suficiente para este proyecto.
-- Filess.io puede suspender la base por inactividad; la primera consulta puede tardar unos segundos.
+- El servicio de Aiven está en el plan de prueba con créditos gratuitos. Cuando los créditos se agoten, Aiven apaga el servicio; hay que pasar a un plan pago o migrar.
+- Aiven anunció el retiro de su MySQL gratuito: el 21 de diciembre de 2026 apaga y borra los servicios gratuitos. Si se migra a TiDB Cloud Starter, solo cambian las variables `DB_*`.
+- Aiven puede apagar el servicio por inactividad; si la API devuelve un error de conexión, enciéndelo desde la consola de Aiven.
 - No hay autenticación: los endpoints de escritura son públicos.
 - CORS está abierto a cualquier origen. Si más adelante quieres restringirlo, cambia `ALLOW_ORIGIN` en `CorsFilter.java`.
 - Para cambiar de proveedor de base de datos solo se modifican las variables `DB_*`; el código no cambia.
@@ -256,11 +264,12 @@ $env:DB_SSL_MODE = "REQUIRED"
 
 | Síntoma | Revisa |
 |---|---|
-| `Communications link failure` | Host, puerto y que la base de Filess.io esté activa. |
-| `Access denied for user` | Usuario y contraseña; algunos proveedores incluyen un prefijo en el usuario. |
-| `Unknown database` | `DB_NAME` debe ser exactamente el nombre de la base. |
+| `Communications link failure` | Host, puerto y que el servicio de Aiven esté encendido. |
+| `Access denied for user` | Usuario y contraseña de Aiven (`avnadmin`). |
+| `Unknown database` | Crea `gluco_api` o usa `defaultdb` en `DB_NAME`. |
 | `Public Key Retrieval is not allowed` | La URL ya incluye `allowPublicKeyRetrieval=true`. |
 | `SSL connection is required` | Usa `DB_SSL_MODE=REQUIRED`. |
+| La API no conecta desde Render | Revisa la lista de IP permitidas de Aiven; debe incluir `0.0.0.0/0`. |
 | La API no responde en Render | Revisa los logs; Tomcat debe escuchar en `0.0.0.0:$PORT`. |
 | `404` en los endpoints | La URL debe incluir `/api/...`; el WAR se publica como `ROOT`. |
 | CORS falla | Verifica que `CorsFilter` esté en `org.lasalle.rest` y que Jersey escanee ese paquete. |
