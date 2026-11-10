@@ -1,0 +1,15 @@
+.git
+.gitignore
+build
+dist
+nbproject
+test
+db
+*.war
+*.ear
+*.class
+*.log
+.env
+.env.*
+README.md
+README-DEPLOY.md

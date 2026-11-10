@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>glucoApi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #3b82f6;
+    --blue-soft: rgba(59, 130, 246, .28);
+    --red: #ef4444;
+    --red-soft: rgba(239, 68, 68, .28);
+    --bg-1: #0a1020;
+    --bg-2: #160d1c;
+    --text: #eef2ff;
+    --muted: #9aa5c4;
+    --glass: rgba(255, 255, 255, .07);
+    --glass-border: rgba(255, 255, 255, .16);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { min-height: 100%; }
+  body {
+    min-height: 100vh;
+    font-family: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    background-attachment: fixed;
+    padding: 32px 20px 60px;
+    position: relative;
+    overflow-x: hidden;
+  }
+  /* Orbes de color que se ven a través del cristal */
+  body::before, body::after {
+    content: ""; position: fixed; z-index: 0; border-radius: 50%;
+    filter: blur(90px); pointer-events: none;
+  }
+  body::before { width: 460px; height: 460px; background: var(--blue); opacity: .45; top: -120px; left: -100px; }
+  body::after  { width: 420px; height: 420px; background: var(--red);  opacity: .38; bottom: -120px; right: -80px; }
+
+  .wrap { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; }
+
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .12);
+    transition: border-color .25s, box-shadow .25s, transform .25s, background .25s;
+  }
+  /* Hover de las tarjetas: azul */
+  .glass.hoverable:hover {
+    border-color: rgba(59, 130, 246, .7);
+    box-shadow: 0 10px 40px var(--blue-soft), inset 0 1px 0 rgba(255, 255, 255, .18);
+    background: rgba(59, 130, 246, .10);
+    transform: translateY(-3px);
+  }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 24px; margin-bottom: 20px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .drop {
+    width: 38px; height: 38px; border-radius: 50% 50% 50% 8px; transform: rotate(-45deg);
+    background: linear-gradient(135deg, var(--blue), var(--red));
+    box-shadow: 0 0 18px var(--blue-soft);
+  }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; }
+  h1 span { color: var(--blue); }
+  .sub { color: var(--muted); font-size: .85rem; }
+
+  .api { display: flex; gap: 8px; align-items: center; flex: 1 1 320px; max-width: 460px; }
+  .api input { flex: 1; }
+  .badge { font-size: .75rem; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--glass-border); color: var(--muted); white-space: nowrap; }
+  .badge.online { color: #93c5fd; border-color: rgba(59, 130, 246, .6); }
+  .badge.offline { color: #fca5a5; border-color: rgba(239, 68, 68, .6); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .stat { padding: 20px 22px; }
+  .stat .k { color: var(--muted); font-size: .82rem; margin-bottom: 8px; }
+  .stat .v { font-size: 2rem; font-weight: 700; letter-spacing: -.02em; }
+  .stat .v small { font-size: .85rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
+
+  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel { padding: 24px; }
+  h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 16px; }
+
+  label { display: block; font-size: .82rem; color: var(--muted); margin: 14px 0 6px; }
+  input, select, textarea {
+    width: 100%; font: inherit; color: var(--text);
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 11px 14px; outline: none;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  select option { color: #111; }
+  input:hover, select:hover, textarea:hover { border-color: rgba(59, 130, 246, .6); }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft);
+  }
+  textarea { resize: vertical; min-height: 64px; }
+
+  button {
+    font: inherit; font-weight: 600; color: var(--text); cursor: pointer;
+    border: 1px solid var(--glass-border); border-radius: 12px; padding: 11px 18px;
+    background: rgba(255, 255, 255, .08);
+    backdrop-filter: blur(10px);
+    transition: background .2s, border-color .2s, box-shadow .2s, transform .15s;
+  }
+  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  button:active { transform: scale(.97); }
+  /* Botón principal: azul al pasar el cursor */
+  button.primary { width: 100%; margin-top: 20px; background: rgba(59, 130, 246, .25); border-color: rgba(59, 130, 246, .5); }
+  button.primary:hover { background: var(--blue); border-color: var(--blue); box-shadow: 0 6px 24px var(--blue-soft); }
+  button.ghost:hover { border-color: var(--blue); background: rgba(59, 130, 246, .2); }
+  /* Acciones destructivas: rojo al pasar el cursor */
+  button.danger { padding: 6px 12px; font-size: .8rem; font-weight: 400; color: var(--muted); }
+  button.danger:hover { background: var(--red); border-color: var(--red); color: #fff; box-shadow: 0 4px 18px var(--red-soft); }
+
+  .chart { width: 100%; height: 190px; margin-bottom: 18px; }
+  .chart svg { width: 100%; height: 100%; display: block; }
+  .empty { color: var(--muted); font-size: .9rem; padding: 28px 8px; text-align: center; }
+
+  ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+  li {
+    display: grid; grid-template-columns: 78px 1fr auto; gap: 12px; align-items: center;
+    padding: 12px 14px; border-radius: 14px;
+    border: 1px solid transparent; background: rgba(255, 255, 255, .04);
+    transition: background .2s, border-color .2s;
+  }
+  /* Filas: azul en el rango normal o bajo, rojo cuando está alta */
+  li:hover { background: rgba(59, 130, 246, .14); border-color: rgba(59, 130, 246, .5); }
+  li.alta:hover { background: rgba(239, 68, 68, .14); border-color: rgba(239, 68, 68, .55); }
+  .val { font-weight: 700; font-size: 1.2rem; }
+  .val small { font-weight: 400; font-size: .7rem; color: var(--muted); margin-left: 2px; }
+  li.alta .val { color: #fca5a5; }
+  li.baja .val { color: #93c5fd; }
+  .meta { font-size: .8rem; color: var(--muted); line-height: 1.4; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  .toast {
+    position: fixed; z-index: 5; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+    padding: 12px 20px; border-radius: 14px; opacity: 0; pointer-events: none;
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.error { border-color: rgba(239, 68, 68, .7); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="glass">
+    <div class="brand">
+      <div class="drop" aria-hidden="true"></div>
+      <div>
+        <h1>gluco<span>Api</span></h1>
+        <div class="sub">Registra y consulta tus lecturas de glucosa</div>
+      </div>
+    </div>
+    <div class="api">
+      <input id="apiUrl" type="url" placeholder="URL de la API, ej. http://localhost:3000" aria-label="URL de la API">
+      <button class="ghost" id="saveApi" type="button">Conectar</button>
+      <span class="badge offline" id="status">Modo local</span>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Resumen">
+    <div class="glass hoverable stat"><div class="k">Última lectura</div><div class="v" id="sLast">-<small>mg/dL</small></div></div>
+    <div class="glass hoverable stat"><div class="k">Promedio</div><div class="v" id="sAvg">-<small>mg/dL</small></div></div>
+    <div class="glass hoverable stat"><div class="k">Dentro de rango (70 a 140)</div><div class="v" id="sRange">-<small>%</small></div></div>
+    <div class="glass hoverable stat"><div class="k">Lecturas registradas</div><div class="v" id="sCount">0</div></div>
+  </section>
+
+  <div class="grid">
+    <section class="glass hoverable panel">
+      <h2>Nueva lectura</h2>
+      <form id="form" novalidate>
+        <label for="valor">Glucosa (mg/dL)</label>
+        <input id="valor" type="number" min="20" max="600" inputmode="numeric" placeholder="Ej. 105" required>
+
+        <label for="momento">Momento</label>
+        <select id="momento">
+          <option>En ayunas</option>
+          <option>Antes de comer</option>
+          <option>Después de comer</option>
+          <option>Antes de dormir</option>
+          <option>Otro</option>
+        </select>
+
+        <label for="nota">Nota (opcional)</label>
+        <textarea id="nota" placeholder="Ej. Después de caminar 20 minutos"></textarea>
+
+        <button class="primary" type="submit">Guardar lectura</button>
+      </form>
+    </section>
+
+    <section class="glass panel">
+      <h2>Historial</h2>
+      <div class="chart" id="chart"></div>
+      <ul id="lista"></ul>
+    </section>
+  </div>
+</div>
+
+<div class="glass toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const LS_API = 'glucoApi:url';
+  const LS_DATA = 'glucoApi:lecturas';
+  let base = '';
+  let lecturas = [];
+
+  /* Endpoints esperados (ajústalos a tu API):
+     GET    {base}/lecturas
+     POST   {base}/lecturas      { valor, momento, nota, fecha }
+     DELETE {base}/lecturas/:id                                      */
+  const RUTA = '/lecturas';
+
+  function toast(msg, error) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'glass toast show' + (error ? ' error' : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  function setStatus(online) {
+    const s = $('status');
+    s.textContent = online ? 'API conectada' : 'Modo local';
+    s.className = 'badge ' + (online ? 'online' : 'offline');
+  }
+
+  function guardarLocal() {
+    try { localStorage.setItem(LS_DATA, JSON.stringify(lecturas)); } catch (e) {}
+  }
+  function cargarLocal() {
+    try { return JSON.parse(localStorage.getItem(LS_DATA)) || []; } catch (e) { return []; }
+  }
+
+  async function cargar() {
+    if (base) {
+      try {
+        const r = await fetch(base + RUTA);
+        if (!r.ok) throw new Error(r.status);
+        const data = await r.json();
+        lecturas = (Array.isArray(data) ? data : data.lecturas || []).map(normalizar);
+        setStatus(true);
+        render();
+        return;
+      } catch (e) {
+        toast('No se pudo conectar con la API. Usando datos locales.', true);
+      }
+    }
+    setStatus(false);
+    lecturas = cargarLocal();
+    render();
+  }
+
+  function normalizar(x) {
+    return {
+      id: x.id ?? x._id ?? crypto.randomUUID(),
+      valor: Number(x.valor ?? x.glucosa ?? x.value),
+      momento: x.momento ?? x.tipo ?? 'Otro',
+      nota: x.nota ?? '',
+      fecha: x.fecha ?? x.createdAt ?? new Date().toISOString()
+    };
+  }
+
+  async function agregar(item) {
+    if (base) {
+      try {
+        const r = await fetch(base + RUTA, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+        if (!r.ok) throw new Error(r.status);
+        toast('Lectura guardada');
+        return cargar();
+      } catch (e) {
+        toast('Error al guardar en la API', true);
+        return;
+      }
+    }
+    item.id = crypto.randomUUID();
+    lecturas.push(item);
+    guardarLocal();
+    render();
+    toast('Lectura guardada');
+  }
+
+  async function borrar(id) {
+    if (base) {
+      try {
+        const r = await fetch(base + RUTA + '/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!r.ok) throw new Error(r.status);
+        toast('Lectura eliminada');
+        return cargar();
+      } catch (e) {
+        toast('Error al eliminar en la API', true);
+        return;
+      }
+    }
+    lecturas = lecturas.filter((l) => l.id !== id);
+    guardarLocal();
+    render();
+    toast('Lectura eliminada');
+  }
+
+  const clase = (v) => (v > 140 ? 'alta' : v < 70 ? 'baja' : '');
+
+  function render() {
+    const orden = [...lecturas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    const n = orden.length;
+
+    $('sCount').textContent = n;
+    $('sLast').innerHTML = n ? orden[0].valor + '<small>mg/dL</small>' : '-<small>mg/dL</small>';
+    $('sAvg').innerHTML = n
+      ? Math.round(orden.reduce((s, l) => s + l.valor, 0) / n) + '<small>mg/dL</small>'
+      : '-<small>mg/dL</small>';
+    $('sRange').innerHTML = n
+      ? Math.round((orden.filter((l) => l.valor >= 70 && l.valor <= 140).length / n) * 100) + '<small>%</small>'
+      : '-<small>%</small>';
+
+    const ul = $('lista');
+    ul.innerHTML = '';
+    if (!n) {
+      ul.innerHTML = '<div class="empty">Aún no hay lecturas. Guarda la primera con el formulario.</div>';
+    }
+    orden.forEach((l) => {
+      const li = document.createElement('li');
+      li.className = clase(l.valor);
+      const fecha = new Date(l.fecha).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+
+      const val = document.createElement('div');
+      val.className = 'val';
+      val.innerHTML = l.valor + '<small>mg/dL</small>';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const b = document.createElement('b');
+      b.textContent = l.momento;
+      meta.append(b, document.createElement('br'), fecha + (l.nota ? ' · ' + l.nota : ''));
+
+      const del = document.createElement('button');
+      del.className = 'danger';
+      del.type = 'button';
+      del.textContent = 'Eliminar';
+      del.addEventListener('click', () => borrar(l.id));
+
+      li.append(val, meta, del);
+      ul.appendChild(li);
+    });
+
+    dibujar(orden.slice(0, 20).reverse());
+  }
+
+  /* Gráfica SVG simple: línea azul, puntos rojos si están fuera de rango alto */
+  function dibujar(datos) {
+    const cont = $('chart');
+    if (datos.length < 2) {
+      cont.innerHTML = '<div class="empty">Se necesitan al menos 2 lecturas para ver la tendencia.</div>';
+      return;
+    }
+    const W = 600, H = 190, p = 28;
+    const max = Math.max(200, ...datos.map((d) => d.valor)) + 10;
+    const min = Math.min(60, ...datos.map((d) => d.valor)) - 10;
+    const x = (i) => p + (i * (W - p * 2)) / (datos.length - 1);
+    const y = (v) => H - p - ((v - min) / (max - min)) * (H - p * 2);
+
+    const linea = datos.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(d.valor).toFixed(1)).join(' ');
+    const puntos = datos.map((d, i) => {
+      const c = d.valor > 140 ? '#ef4444' : '#3b82f6';
+      return '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(d.valor).toFixed(1) + '" r="4.5" fill="' + c + '" stroke="rgba(255,255,255,.7)" stroke-width="1.2"><title>' + d.valor + ' mg/dL</title></circle>';
+    }).join('');
+
+    cont.innerHTML =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Tendencia de glucosa">' +
+      '<rect x="' + p + '" y="' + y(140).toFixed(1) + '" width="' + (W - p * 2) + '" height="' + (y(70) - y(140)).toFixed(1) + '" fill="rgba(59,130,246,.12)"/>' +
+      '<path d="' + linea + '" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
+      puntos + '</svg>';
+  }
+
+  $('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = Number($('valor').value);
+    if (!v || v < 20 || v > 600) {
+      toast('Escribe un valor entre 20 y 600 mg/dL', true);
+      $('valor').focus();
+      return;
+    }
+    agregar({
+      valor: v,
+      momento: $('momento').value,
+      nota: $('nota').value.trim(),
+      fecha: new Date().toISOString()
+    });
+    $('valor').value = '';
+    $('nota').value = '';
+  });
+
+  $('saveApi').addEventListener('click', () => {
+    base = $('apiUrl').value.trim().replace(/\/+$/, '');
+    try { localStorage.setItem(LS_API, base); } catch (e) {}
+    cargar();
+  });
+
+  try { base = localStorage.getItem(LS_API) || ''; } catch (e) {}
+  $('apiUrl').value = base;
+  cargar();
+})();
+</script>
+</body>
+</html>
