@@ -21,6 +21,7 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV PORT=10000
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=60 -Dfile.encoding=UTF-8"
 EXPOSE 10000
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

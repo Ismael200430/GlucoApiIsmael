@@ -1,0 +1,6 @@
+# Mantener finales de línea LF en archivos que se ejecutan dentro de Linux.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.sql text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
