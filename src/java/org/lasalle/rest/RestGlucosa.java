@@ -88,7 +88,9 @@ public class RestGlucosa {
         } catch (SQLException e) {
             e.printStackTrace();
             return Response.serverError()
-                    .entity(gson.toJson(Map.of("error", "No se pudo obtener la lista de usuarios")))
+                    .entity(gson.toJson(Map.of(
+                            "error", "No se pudo obtener la lista de usuarios",
+                            "detalle", String.valueOf(e))))
                     .build();
         }
     }
