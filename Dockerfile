@@ -9,7 +9,10 @@ COPY pom.xml ./
 COPY src ./src
 COPY web ./web
 
-RUN mvn -B clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn -B clean package -DskipTests \
+    -Dmaven.wagon.http.retryHandler.count=10 \
+    -Dmaven.wagon.http.retryHandler.requestSentEnabled=true \
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 
 # Etapa 2: ejecutar el WAR en Tomcat 11
 FROM tomcat:11.0.27-jdk21-temurin-noble
